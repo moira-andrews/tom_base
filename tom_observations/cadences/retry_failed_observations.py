@@ -5,7 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from tom_observations.cadence import BaseCadenceForm, CadenceStrategy
-from tom_observations.models import ObservationRecord, DynamicCadence
+from tom_observations.models import ObservationRecord
 from tom_observations.facility import get_service_class
 
 logger = logging.getLogger(__name__)
@@ -17,19 +17,20 @@ class RetryFailedObservationsForm(BaseCadenceForm):
 
 class BaseRetryFailedObservationsStrategy(CadenceStrategy):
     """
-    The BaseRetryFailedObservationsStrategy immediately re-submits all observations within an observation group a certain
-    number of hours later, as specified by ``advance_window_hours``.
+    The BaseRetryFailedObservationsStrategy immediately re-submits all observations within an observation
+    group a certain number of hours later, as specified by ``advance_window_hours``.
 
     This strategy requires the DynamicCadence to have a parameter ``cadence_frequency``.
     """
     name = 'Retry Failed Observations'
-    description = """This strategy immediately re-submits a cadenced observation without amending any other part of the
-                     cadence."""
+    description = """This strategy immediately re-submits a cadenced observation without amending any
+                     other part of the cadence."""
     form = RetryFailedObservationsForm
 
     def retry_observation(self, first_obs, last_obs, facility):
         '''
-        Default retry observations, for BaseRetry strategy (retry until successful), the default is to always retry the observations until obtained
+        Default retry observations, for BaseRetry strategy (retry until successful), the default is to always
+        retry the observations until obtained
         '''
         return True
 
@@ -79,7 +80,8 @@ class BaseRetryFailedObservationsStrategy(CadenceStrategy):
 
         start_keyword, end_keyword = facility.get_start_end_keywords()
         observation_payload = self.advance_window(
-            observation_payload, start_keyword=start_keyword, end_keyword=end_keyword, first_obs=first_obs, facility=facility
+            observation_payload, start_keyword=start_keyword, end_keyword=end_keyword,
+            first_obs=first_obs, facility=facility
         )
 
         if observation_payload is None:
@@ -122,7 +124,8 @@ class BaseRetryFailedObservationsStrategy(CadenceStrategy):
 
         return new_observations
 
-    def advance_window(self, observation_payload, start_keyword='start', end_keyword='end', first_obs=None, facility=None):
+    def advance_window(self, observation_payload,
+                       start_keyword='start', end_keyword='end', first_obs=None, facility=None):
         cadence_frequency = self.dynamic_cadence.cadence_parameters.get('cadence_frequency')
         if cadence_frequency is None:
             raise Exception(
@@ -157,7 +160,8 @@ class RetryUntilDeadlineStrategy(BaseRetryFailedObservationsStrategy):
         deadline = self.get_deadline(first_obs, facility)
         return timezone.now() < deadline
 
-    def advance_window(self, observation_payload, start_keyword='start', end_keyword='end', first_obs=None, facility=None):
+    def advance_window(self, observation_payload,
+                       start_keyword='start', end_keyword='end', first_obs=None, facility=None):
         cadence_frequency = self.dynamic_cadence.cadence_parameters.get('cadence_frequency')
         if cadence_frequency is None:
             raise Exception(

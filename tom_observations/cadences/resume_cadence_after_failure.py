@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from dateutil.parser import parse
 from django.conf import settings
 import logging
@@ -55,7 +55,7 @@ class ResumeCadenceAfterFailureStrategy(CadenceStrategy):
         # If the observation hasn't finished, do nothing
         if not last_obs.terminal:
             return
-        
+
         if last_obs.status == 'CANCELED':
             self.dynamic_cadence.active = False
             self.dynamic_cadence.save()
@@ -128,7 +128,7 @@ class ResumeCadenceAfterFailureStrategy(CadenceStrategy):
         # Update the status of the ObservationRecords in the DB
         for obsr in new_observations:
             facility.update_observation_status(obsr.observation_id)
-            obsr.refresh_from_db() # commit the updated observation status
+            obsr.refresh_from_db()  # commit the updated observation status
 
         return new_observations
 

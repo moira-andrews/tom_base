@@ -1074,7 +1074,7 @@ class LCOSpectroscopicSequenceForm(LCOOldStyleObservationForm):
         cadence_frequency = cleaned_data['cadence_frequency']
         window_min = getattr(settings, 'OBS_WINDOW_MINIMUM', 24)
         window_length = min(cadence_frequency, window_min)
-        
+
         cleaned_data['end'] = datetime.strftime(parse(start) + timedelta(hours=window_length),
                                                 '%Y-%m-%dT%H:%M:%S')
 

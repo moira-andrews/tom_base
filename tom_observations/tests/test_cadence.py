@@ -7,7 +7,9 @@ from dateutil.parser import parse
 from .factories import ObservingRecordFactory, SiderealTargetFactory
 from tom_observations.models import ObservationGroup, DynamicCadence
 from tom_observations.cadences.resume_cadence_after_failure import ResumeCadenceAfterFailureStrategy
-from tom_observations.cadences.retry_failed_observations import RetryFailedObservationsStrategy, RetryUntilDeadlineStrategy
+from tom_observations.cadences.retry_failed_observations import (
+    RetryFailedObservationsStrategy, RetryUntilDeadlineStrategy
+)
 
 
 mock_instruments = {
@@ -109,8 +111,8 @@ class TestReactiveCadencing(TestCase):
         self.assertEqual(num_records, self.group.observation_records.count())
         self.assertFalse(self.dynamic_cadence.active)
 
-    @patch('tom_observations.facilities.lco.LCOFacility.get_observation_status', return_value={'state': 'WINDOW_EXPIRED',
-           'scheduled_start': None, 'scheduled_end': None})
+    @patch('tom_observations.facilities.lco.LCOFacility.get_observation_status',
+           return_value={'state': 'WINDOW_EXPIRED', 'scheduled_start': None, 'scheduled_end': None})
     def test_resume_when_failed_cadence_failed_obs(self, mock_get_obs_status, mock_validate_obs, mock_submit_obs,
                                                    mock_proposal_choices, mock_get_insts):
         mock_validate_obs.return_value = {}
@@ -224,7 +226,8 @@ class TestReactiveCadencing(TestCase):
 
     @patch('tom_observations.facilities.lco.LCOFacility.get_observation_status',
            return_value={'state': 'WINDOW_EXPIRED', 'scheduled_start': None, 'scheduled_end': None})
-    def test_retry_until_deadline_before_deadline_retries(self, mock_get_obs_status, mock_validate_obs, mock_submit_obs,
+    def test_retry_until_deadline_before_deadline_retries(self, mock_get_obs_status,
+                                                          mock_validate_obs, mock_submit_obs,
                                                           mock_proposal_choices, mock_get_insts):
         mock_validate_obs.return_value = {}
         num_records = self.group.observation_records.count()
@@ -244,7 +247,8 @@ class TestReactiveCadencing(TestCase):
     @patch('tom_observations.facilities.lco.LCOFacility.get_observation_status',
            return_value={'state': 'WINDOW_EXPIRED', 'scheduled_start': None, 'scheduled_end': None})
     def test_retry_until_deadline_after_deadline_deactivates(self, mock_get_obs_status, mock_validate_obs,
-                                                             mock_submit_obs, mock_proposal_choices, mock_get_insts):
+                                                             mock_submit_obs, mock_proposal_choices,
+                                                             mock_get_insts):
         mock_validate_obs.return_value = {}
         first_obs = self.group.observation_records.order_by('created').first()
         first_obs.parameters = {**first_obs.parameters,
