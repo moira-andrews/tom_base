@@ -27,6 +27,11 @@ class BaseRetryFailedObservationsStrategy(CadenceStrategy):
                      cadence."""
     form = RetryFailedObservationsForm
 
+    def notify_success(self):
+        '''
+        Function to add a call to slack or email on successful single time observations
+        '''
+
     def run(self):
         records = self.dynamic_cadence.observation_group.observation_records.all().order_by('created')
         first_obs = records.first()
