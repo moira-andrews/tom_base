@@ -27,10 +27,17 @@ class BaseRetryFailedObservationsStrategy(CadenceStrategy):
                      cadence."""
     form = RetryFailedObservationsForm
 
-    def notify_success(self):
+    def retry_observation(self, first_obs, last_obs, facility):
+        '''
+        Default retry observations, for BaseRetry strategy (retry until successful), the default is to always retry the observations until obtained
+        '''
+        return True
+
+    def notify_success(self, obs):
         '''
         Function to add a call to slack or email on successful single time observations
         '''
+        return
 
     def run(self):
         records = self.dynamic_cadence.observation_group.observation_records.all().order_by('created')
@@ -62,10 +69,7 @@ class BaseRetryFailedObservationsStrategy(CadenceStrategy):
         if not self.retry_observation(first_obs, last_obs, facility):
             self.dynamic_cadence.active = False
             self.dynamic_cadence.save()
-            logger.info(
-                f'Stopping retry cadence for observation group '
-                f'{self.dynamic_cadence.observation_group.id}'
-            )
+            logger.info(f'Stopping retry cadence for observation group {self.dynamic_cadence.observation_group.id}')
             return
 
         return self.submit_retry_observation(first_obs, last_obs, facility)
