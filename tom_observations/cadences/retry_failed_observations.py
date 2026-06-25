@@ -94,7 +94,7 @@ class BaseRetryFailedObservationsStrategy(CadenceStrategy):
             return
 
         obs_type = observation_payload.get('observation_type')
-        form = facility.get_form(obs_type)(observation_payload)
+        form = facility.get_form(obs_type)(data=observation_payload)
 
         if not form.is_valid():
             logger.error(
