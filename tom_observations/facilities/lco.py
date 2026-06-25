@@ -789,7 +789,7 @@ class LCOPhotometricSequenceForm(LCOOldStyleObservationForm):
     The form is modeled after the Supernova Exchange application's Photometric Sequence Request Form, and allows the
     configuration of multiple filters, as well as a more intuitive proactive cadence form.
     """
-    valid_instruments = ['1M0-SCICAM-SINISTRO', '0M4-SCICAM-SBIG', '2M0-SPECTRAL-AG']
+    valid_instruments = ['1M0-SCICAM-SINISTRO', '0M4-SCICAM-SBIG', '2M0-SPECTRAL-AG', '0M4-SCICAM-QHY600']
     valid_filters = ['U', 'B', 'V', 'R', 'I', 'up', 'gp', 'rp', 'ip', 'zs', 'w', 'unknown']
     cadence_frequency = forms.IntegerField(required=True, help_text='in hours')
 
@@ -808,7 +808,11 @@ class LCOPhotometricSequenceForm(LCOOldStyleObservationForm):
 
         # Massage cadence form to be SNEx-styled
         self.fields['cadence_strategy'] = forms.ChoiceField(
-            choices=[('', 'Once in the next'), ('ResumeCadenceAfterFailureStrategy', 'Repeating every')],
+            choices=[
+                ('ResumeCadenceAfterFailureStrategy', 'Repeating every'),
+                ('RetryUntilDeadlineStrategy', 'Once in the next'),
+                ('RetryFailedObservationsStrategy', 'Retry until successful'),
+            ],
             required=False,
         )
         for field_name in ['exposure_time', 'exposure_count', 'filter']:
@@ -816,8 +820,7 @@ class LCOPhotometricSequenceForm(LCOOldStyleObservationForm):
         if self.fields.get('groups'):
             self.fields['groups'].label = 'Data granted to'
         for field_name in ['start', 'end']:
-            self.fields[field_name].widget = forms.HiddenInput()
-            self.fields[field_name].required = False
+            self.fields[field_name] = forms.CharField(required=False, widget=forms.HiddenInput())
 
         self.helper.layout = Layout(
             Row(
@@ -882,14 +885,11 @@ class LCOPhotometricSequenceForm(LCOOldStyleObservationForm):
             - Adds an end time that corresponds with the cadence frequency
         """
         cleaned_data = super().clean()
+        logger.info(f'cleaned data: {cleaned_data}')
         start = cleaned_data.get('start')
         cadence_frequency = cleaned_data['cadence_frequency']
-        if settings.OBS_WINDOW_MINIMUM:
-            window_length = settings.OBS_WINDOW_MINIMUM
-            if window_length > cadence_frequency:
-                window_length = cadence_frequency
-        else:
-            window_length = cadence_frequency
+        window_min = getattr(settings, 'OBS_WINDOW_MINIMUM', 24)
+        window_length = min(window_min, cadence_frequency)
 
         cleaned_data['end'] = datetime.strftime(parse(start) + timedelta(hours=window_length),
                                                 '%Y-%m-%dT%H:%M:%S')
@@ -974,7 +974,11 @@ class LCOSpectroscopicSequenceForm(LCOOldStyleObservationForm):
         self.fields['name'].widget.attrs['placeholder'] = 'Name'
         self.fields['min_lunar_distance'].widget.attrs['placeholder'] = 'Degrees'
         self.fields['cadence_strategy'] = forms.ChoiceField(
-            choices=[('', 'Once in the next'), ('ResumeCadenceAfterFailureStrategy', 'Repeating every')],
+            choices=[
+                ('ResumeCadenceAfterFailureStrategy', 'Repeating every'),
+                ('RetryUntilDeadlineStrategy', 'Once in the next'),
+                ('RetryFailedObservationsStrategy', 'Retry until successful'),
+            ],
             required=False,
             label=''
         )
@@ -986,8 +990,7 @@ class LCOSpectroscopicSequenceForm(LCOOldStyleObservationForm):
         if self.fields.get('groups'):
             self.fields['groups'].label = 'Data granted to'
         for field_name in ['start', 'end']:
-            self.fields[field_name].widget = forms.HiddenInput()
-            self.fields[field_name].required = False
+            self.fields[field_name] = forms.CharField(required=False, widget=forms.HiddenInput())
 
         self.helper.layout = Layout(
             Div(
@@ -1068,12 +1071,10 @@ class LCOSpectroscopicSequenceForm(LCOOldStyleObservationForm):
         cleaned_data['instrument_type'] = '2M0-FLOYDS-SCICAM'  # SNEx only submits spectra to FLOYDS
 
         start = cleaned_data.get('start')
-        if settings.OBS_WINDOW_MINIMUM:
-            min_window = settings.OBS_WINDOW_MINIMUM
-        else:
-            min_window = 24
-        window_length = min_window if cleaned_data['cadence_frequency'] > min_window else cleaned_data['cadence_frequency']
-
+        cadence_frequency = cleaned_data['cadence_frequency']
+        window_min = getattr(settings, 'OBS_WINDOW_MINIMUM', 24)
+        window_length = min(cadence_frequency, window_min)
+        
         cleaned_data['end'] = datetime.strftime(parse(start) + timedelta(hours=window_length),
                                                 '%Y-%m-%dT%H:%M:%S')
 
