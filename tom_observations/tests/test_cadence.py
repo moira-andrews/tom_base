@@ -191,6 +191,7 @@ class TestReactiveCadencing(TestCase):
         strategy = ResumeCadenceAfterFailureStrategy(self.dynamic_cadence)
         with self.assertRaises(Exception):
             strategy.run()
+
     @patch('tom_observations.facilities.lco.LCOFacility.get_observation_status',
            return_value={'state': 'PENDING', 'scheduled_start': None, 'scheduled_end': None})
     def test_retry_when_not_terminal_noop(self, mock_get_obs_status, mock_validate_obs, mock_submit_obs,
